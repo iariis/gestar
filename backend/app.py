@@ -5,7 +5,6 @@ Flask + almacenamiento en memoria (reemplazar por una base de datos real en prod
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-
 app = Flask(__name__)
 CORS(app)  # Permite que el frontend (React, otro puerto) consuma la API
 
@@ -87,13 +86,37 @@ def create_patient():
     return jsonify(patient), 201
 
 
+
 # -----------------------------------------------------------------------
 # Presión arterial
 # -----------------------------------------------------------------------
+
+def clasificar_presion(sistolica, diastolica):
+    if sistolica >= 160 or diastolica >= 110:
+        return {
+            "nivel": "GRAVE",
+            "mensaje": "Presión arterial severamente elevada. Se requiere atención médica urgente.",
+            "alerta": True
+        }
+
+    elif sistolica >= 140 or diastolica >= 90:
+        return {
+            "nivel": "ALTA",
+            "mensaje": "Presión arterial elevada. Se recomienda consultar con el equipo de salud.",
+            "alerta": True
+        }
+
+    else:
+        return {
+            "nivel": "NORMAL",
+            "mensaje": "Presión arterial dentro del rango esperado.",
+            "alerta": False
+        }
+
+
 @app.route("/api/bp", methods=["GET"])
 def get_bp_records():
     return jsonify(list(reversed(bp_records))), 200
-
 
 @app.route("/api/bp", methods=["POST"])
 def create_bp_record():
@@ -126,16 +149,21 @@ def create_bp_record():
     if errors:
         return jsonify({"errors": errors}), 400
 
+    clasificacion = clasificar_presion(sistolica, diastolica)
+
     fecha, hora = now_fecha_hora()
     record = {
-        "id": next_bp_id,
-        "patient_id": patient["id"],
-        "patient_name": f'{patient["nombre"]} {patient["apellido"]}',
-        "fecha": fecha,
-        "hora": hora,
-        "sistolica": sistolica,
-        "diastolica": diastolica,
-    }
+    "id": next_bp_id,
+    "patient_id": patient["id"],
+    "patient_name": f'{patient["nombre"]} {patient["apellido"]}',
+    "fecha": fecha,
+    "hora": hora,
+    "sistolica": sistolica,
+    "diastolica": diastolica,
+    "nivel": clasificacion["nivel"],
+    "mensaje": clasificacion["mensaje"],
+    "alerta": clasificacion["alerta"],
+}
     bp_records.append(record)
     next_bp_id += 1
     return jsonify(record), 201
