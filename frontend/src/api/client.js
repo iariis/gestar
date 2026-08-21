@@ -1,8 +1,6 @@
 // Cliente HTTP simple para hablar con el backend Flask.
-// En desarrollo, configurá un proxy en vite.config.js hacia http://localhost:5000
-// o seteá VITE_API_URL en un archivo .env
-
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// En desarrollo, Vite reenvía /api al backend en el puerto 5000.
+const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
