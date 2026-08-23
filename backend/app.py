@@ -15,7 +15,9 @@ CORS(app)  # Permite que el frontend (React, otro puerto) consuma la API
 patients = []       # [{ id, nombre, apellido, dni, email, estado }]
 bp_records = []      # [{ id, patient_dni, patient_name, fecha, hora, sistolica, diastolica }]
 symptom_records = [] # [{ id, patient_dni, fecha, hora, symptoms: [] }]
+weight_records = []
 
+next_weight_id = 1
 next_patient_id = 1
 next_bp_id = 1
 next_symptom_id = 1
@@ -140,7 +142,63 @@ def create_bp_record():
     next_bp_id += 1
     return jsonify(record), 201
 
+# -----------------------------------------------------------------------
+# Peso
+# -----------------------------------------------------------------------
 
+@app.route("/api/weight", methods=["GET"])
+def get_weight_records():
+    return jsonify(list(reversed(weight_records))), 200
+
+
+@app.route("/api/weight", methods=["POST"])
+def create_weight_record():
+    global next_weight_id
+
+    data = request.get_json(force=True, silent=True) or {}
+
+    patient_id = data.get("patient_id")
+    peso = data.get("peso")
+
+    errors = {}
+
+    # Buscar paciente
+    patient = next(
+        (p for p in patients if p["id"] == patient_id),
+        None
+    )
+
+    if patient is None:
+        errors["patient_id"] = "Seleccione una embarazada"
+
+    # Validar peso
+    try:
+        peso = float(peso)
+
+        if peso <= 0 or peso > 300:
+            errors["peso"] = "Ingrese un peso válido"
+
+    except (TypeError, ValueError):
+        errors["peso"] = "Ingrese un peso válido"
+
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    fecha, hora = now_fecha_hora()
+
+    record = {
+        "id": next_weight_id,
+        "patient_id": patient["id"],
+        "patient_name": f'{patient["nombre"]} {patient["apellido"]}',
+        "fecha": fecha,
+        "hora": hora,
+        "peso": peso
+    }
+
+    weight_records.append(record)
+    next_weight_id += 1
+
+    return jsonify(record), 201
 # -----------------------------------------------------------------------
 # Login de paciente
 # -----------------------------------------------------------------------
@@ -201,3 +259,4 @@ def health():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
