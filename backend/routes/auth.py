@@ -12,7 +12,11 @@ def patient_login():
     password = (data.get("password") or "").strip()  # en este prototipo, password == DNI
 
     patient = Patient.query.filter_by(email=email, dni=password).first()
+
     if patient is None:
         return jsonify({"error": "Email o contraseña incorrectos."}), 401
+
+    if patient.estado != "Activo":
+        return jsonify({"error": "La cuenta del paciente está inactiva."}), 403
 
     return jsonify(patient.to_dict()), 200

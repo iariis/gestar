@@ -11,9 +11,33 @@ export default function PatientLoginForm({ onLogin, onBack }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail) {
+      setError("El email es obligatorio.");
+      return;
+    }
+
+    if (!cleanPassword) {
+      setError("El DNI es obligatorio.");
+      return;
+    }
+
+    if (!cleanEmail.includes("@")) {
+      setError("Ingresá un email válido.");
+      return;
+    }
+
     setSubmitting(true);
+
     try {
-      const patient = await api.login({ email, password });
+      const patient = await api.login({
+        email: cleanEmail,
+        password: cleanPassword,
+      });
+
       onLogin(patient);
     } catch (err) {
       setError(err.message || "Email o contraseña incorrectos.");
@@ -35,6 +59,7 @@ export default function PatientLoginForm({ onLogin, onBack }) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
             className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300"
           />
         </div>
