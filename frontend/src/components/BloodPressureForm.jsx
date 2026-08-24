@@ -61,8 +61,13 @@ export default function BloodPressureForm({ patients, bpRecords, onRecordCreated
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Sistólica</label>
+            <p className="text-xs text-gray-400 mb-1">
+              Rango permitido: 80–200 mmHg
+            </p>
             <input
               type="number"
+              min="80"
+              max="200"
               value={sistolica}
               onChange={(e) => setSistolica(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
@@ -71,8 +76,13 @@ export default function BloodPressureForm({ patients, bpRecords, onRecordCreated
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Diastólica</label>
+            <p className="text-xs text-gray-400 mb-1">
+              Rango permitido: 50–130 mmHg
+            </p>
             <input
               type="number"
+              min="50"
+              max="130"
               value={diastolica}
               onChange={(e) => setDiastolica(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
