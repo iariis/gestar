@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
+
 import { api } from "../api/client";
+
 import RegisterPatientForm from "./RegisterPatientForm";
+
 import PatientListTable from "./PatientListTable";
+
 import BloodPressureForm from "./BloodPressureForm";
+
+import MessagesPanel from "./MessagesPanel";
 
 const NAV_ITEMS = [
   { id: "register", label: "Registrar embarazada", icon: "➕" },
   { id: "list", label: "Lista de usuarios", icon: "📋" },
   { id: "bp", label: "Registrar presión arterial", icon: "🩺" },
+  { id: "messages", label: "Mensajes", icon: "💬" },
 ];
 
 export default function NurseDashboard({ onLogout, showToast }) {
@@ -37,6 +44,7 @@ export default function NurseDashboard({ onLogout, showToast }) {
 
   useEffect(() => {
     if (activeView === "list") loadPatients();
+
     if (activeView === "bp") {
       loadPatients();
       loadBPRecords();
@@ -57,7 +65,9 @@ export default function NurseDashboard({ onLogout, showToast }) {
               key={item.id}
               onClick={() => setActiveView(item.id)}
               className={`sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 ${
-                activeView === item.id ? "active bg-purple-50 text-purple-700" : ""
+                activeView === item.id
+                  ? "active bg-purple-50 text-purple-700"
+                  : ""
               }`}
             >
               <span>{item.icon}</span>
@@ -83,14 +93,24 @@ export default function NurseDashboard({ onLogout, showToast }) {
             showToast={showToast}
           />
         )}
-        {activeView === "list" && <PatientListTable patients={patients} />}
+
+        {activeView === "list" && (
+          <PatientListTable patients={patients} />
+        )}
+
         {activeView === "bp" && (
           <BloodPressureForm
             patients={patients}
             bpRecords={bpRecords}
-            onRecordCreated={(r) => setBpRecords((prev) => [r, ...prev])}
+            onRecordCreated={(r) =>
+              setBpRecords((prev) => [r, ...prev])
+            }
             showToast={showToast}
           />
+        )}
+
+        {activeView === "messages" && (
+          <MessagesPanel showToast={showToast} />
         )}
       </main>
     </div>
