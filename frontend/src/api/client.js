@@ -58,4 +58,13 @@ export const api = {
   getNurses: () => request("/nurses"),
   createNurse: (payload) =>
     request("/nurses", { method: "POST", body: JSON.stringify(payload) }),
+
+  configureReminder: (payload) =>
+    request("/reminders/config", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  getReminders: (patientId) =>
+    request(`/reminders/${patientId}`),
 };
