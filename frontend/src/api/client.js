@@ -1,9 +1,5 @@
 // Cliente HTTP simple para hablar con el backend Flask.
 
-// En desarrollo, configurá un proxy en vite.config.js hacia
-// http://localhost:5000
-// o seteá VITE_API_URL en un archivo .env
-
 const BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -57,6 +53,18 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  // Mensajes - GT-103
+  // Mensajes
   getMessages: () => request("/messages"),
+
+  createMessage: (payload) =>
+    request("/messages", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  replyMessage: (messageId, reply) =>
+    request(`/messages/${messageId}/reply`, {
+      method: "POST",
+      body: JSON.stringify({ reply }),
+    }),
 };

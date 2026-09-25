@@ -11,17 +11,17 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-CORS(app)  # Permite que el frontend (React, otro puerto) consuma la API
+CORS(app)
 
 
 # -----------------------------------------------------------------------
-# "Base de datos" en memoria (se pierde al reiniciar el servidor)
+# "Base de datos" en memoria
 # -----------------------------------------------------------------------
 
-patients = []       # [{ id, nombre, apellido, dni, email, estado }]
-bp_records = []     # [{ id, patient_id, patient_name, fecha, hora, sistolica, diastolica }]
-symptom_records = []  # [{ id, patient_dni, fecha, hora, symptoms: [] }]
-messages = []       # [{ id, patient_dni, patient_name, message, fecha, hora }]
+patients = []
+bp_records = []
+symptom_records = []
+messages = []
 
 next_patient_id = 1
 next_bp_id = 1
@@ -49,7 +49,7 @@ def find_patient_by_dni(dni):
 
 
 # -----------------------------------------------------------------------
-# Pacientes (embarazadas)
+# Pacientes
 # -----------------------------------------------------------------------
 
 @app.route("/api/patients", methods=["GET"])
@@ -181,8 +181,6 @@ def patient_login():
     data = request.get_json(force=True, silent=True) or {}
 
     email = (data.get("email") or "").strip()
-
-    # En este prototipo, password == DNI
     password = (data.get("password") or "").strip()
 
     patient = next(
@@ -296,12 +294,54 @@ def create_message():
         "message": message,
         "fecha": fecha,
         "hora": hora,
+        "reply": None,
+        "fecha_respuesta": None,
+        "hora_respuesta": None,
     }
 
     messages.append(new_message)
     next_message_id += 1
 
     return jsonify(new_message), 201
+
+
+# -----------------------------------------------------------------------
+# Respuesta del enfermero
+# -----------------------------------------------------------------------
+
+@app.route("/api/messages/<int:message_id>/reply", methods=["POST"])
+def reply_message(message_id):
+    data = request.get_json(force=True, silent=True) or {}
+
+    reply = (data.get("reply") or "").strip()
+
+    if not reply:
+        return jsonify(
+            {"error": "La respuesta no puede estar vacía"}
+        ), 400
+
+    if len(reply) > 500:
+        return jsonify(
+            {"error": "La respuesta no puede superar los 500 caracteres"}
+        ), 400
+
+    message = next(
+        (item for item in messages if item["id"] == message_id),
+        None
+    )
+
+    if message is None:
+        return jsonify(
+            {"error": "Mensaje no encontrado"}
+        ), 404
+
+    fecha, hora = now_fecha_hora()
+
+    message["reply"] = reply
+    message["fecha_respuesta"] = fecha
+    message["hora_respuesta"] = hora
+
+    return jsonify(message), 200
 
 
 # -----------------------------------------------------------------------
