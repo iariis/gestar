@@ -67,4 +67,7 @@ export const api = {
 
   getReminders: (patientId) =>
     request(`/reminders/${patientId}`),
+
+  checkReminder: (patientId) =>
+    request(`/reminders/check/${patientId}`),
 };

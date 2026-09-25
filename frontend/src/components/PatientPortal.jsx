@@ -11,6 +11,7 @@ export default function PatientPortal({ onBack, showToast }) {
   const [currentPatient, setCurrentPatient] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  const [tipo, setTipo] = useState("mañana");
   const [horario, setHorario] = useState("08:00");
   const [savingReminder, setSavingReminder] = useState(false);
   const [reminders, setReminders] = useState([]);
@@ -38,7 +39,7 @@ export default function PatientPortal({ onBack, showToast }) {
     try {
       await api.configureReminder({
         patient_id: currentPatient.id,
-        tipo: "mañana",
+        tipo,
         horario,
       });
 
@@ -53,24 +54,21 @@ export default function PatientPortal({ onBack, showToast }) {
     }
   };
 
-  // Comprueba cada segundo si llegó la hora del recordatorio
+  // Controla si corresponde mostrar el recordatorio.
   useEffect(() => {
     if (!currentPatient || reminders.length === 0) return;
 
-    const checkReminder = () => {
-      const now = new Date();
+    const checkReminder = async () => {
+      try {
+        const result = await api.checkReminder(currentPatient.id);
 
-      const currentHour = String(now.getHours()).padStart(2, "0");
-      const currentMinute = String(now.getMinutes()).padStart(2, "0");
-
-      const currentTime = `${currentHour}:${currentMinute}`;
-
-      const reminderExists = reminders.some(
-        (reminder) => reminder.horario === currentTime
-      );
-
-      if (reminderExists) {
-        setShowReminderAlert(true);
+        if (result.mostrar) {
+          setShowReminderAlert(true);
+        } else {
+          setShowReminderAlert(false);
+        }
+      } catch (error) {
+        console.error("Error al controlar recordatorio:", error);
       }
     };
 
@@ -97,6 +95,7 @@ export default function PatientPortal({ onBack, showToast }) {
       {showReminderAlert && (
         <div className="w-full max-w-lg mb-4 bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-sm">
           <div className="flex justify-between items-start">
+
             <div>
               <h2 className="font-semibold text-blue-800">
                 🔔 Es hora de registrar tu presión arterial
@@ -113,12 +112,14 @@ export default function PatientPortal({ onBack, showToast }) {
             >
               ✕
             </button>
+
           </div>
         </div>
       )}
 
       {/* ENCABEZADO */}
       <div className="w-full max-w-lg flex justify-between items-center mb-6">
+
         <h1 className="text-lg font-semibold text-gray-800">
           Hola, {currentPatient.nombre} 👋
         </h1>
@@ -129,6 +130,7 @@ export default function PatientPortal({ onBack, showToast }) {
         >
           Salir
         </button>
+
       </div>
 
       {/* SÍNTOMAS */}
@@ -151,10 +153,40 @@ export default function PatientPortal({ onBack, showToast }) {
         </h2>
 
         <p className="text-sm text-gray-500 mb-4">
-          Elegí la hora en la que querés recibir el recordatorio.
+          Elegí el momento y la hora en la que querés recibir el recordatorio.
         </p>
 
+        {/* MOMENTO DEL DÍA */}
         <div className="mb-4">
+
+          <label className="block text-sm text-gray-600 mb-1">
+            Momento del día
+          </label>
+
+          <select
+            value={tipo}
+            onChange={(e) => {
+              const nuevoTipo = e.target.value;
+
+              setTipo(nuevoTipo);
+
+              if (nuevoTipo === "mañana") {
+                setHorario("08:00");
+              } else {
+                setHorario("20:00");
+              }
+            }}
+            className="w-full border rounded-lg px-3 py-2"
+          >
+            <option value="mañana">Mañana</option>
+            <option value="noche">Noche</option>
+          </select>
+
+        </div>
+
+        {/* HORA */}
+        <div className="mb-4">
+
           <label className="block text-sm text-gray-600 mb-1">
             Hora
           </label>
@@ -165,6 +197,7 @@ export default function PatientPortal({ onBack, showToast }) {
             onChange={(e) => setHorario(e.target.value)}
             className="w-full border rounded-lg px-3 py-2"
           />
+
         </div>
 
         <button
@@ -172,7 +205,9 @@ export default function PatientPortal({ onBack, showToast }) {
           disabled={savingReminder}
           className="w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700 disabled:opacity-50"
         >
-          {savingReminder ? "Guardando..." : "Guardar recordatorio"}
+          {savingReminder
+            ? "Guardando..."
+            : "Guardar recordatorio"}
         </button>
 
         {/* RECORDATORIOS GUARDADOS */}
@@ -180,21 +215,23 @@ export default function PatientPortal({ onBack, showToast }) {
           <div className="mt-5">
 
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
-              Mi recordatorio
+              Mis recordatorios
             </h3>
 
             {reminders.map((reminder) => (
               <div
                 key={reminder.id}
-                className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2"
+                className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2 mb-2"
               >
+
                 <span className="text-sm text-gray-700">
-                  Recordatorio de presión
+                  Recordatorio de {reminder.tipo}
                 </span>
 
                 <span className="font-medium text-sm text-gray-800">
                   {reminder.horario}
                 </span>
+
               </div>
             ))}
 
@@ -210,6 +247,7 @@ export default function PatientPortal({ onBack, showToast }) {
         onConfirm={() => {
           setShowLogoutConfirm(false);
           showToast("Sesión cerrada correctamente.");
+
           setCurrentPatient(null);
           setReminders([]);
           setShowReminderAlert(false);
