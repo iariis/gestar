@@ -1,46 +1,81 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import RegisterPatientForm from "./RegisterPatientForm";
+import RegisterUserForm from "./RegisterUserForm";
 import PatientListTable from "./PatientListTable";
 import BloodPressureForm from "./BloodPressureForm";
+import WeightForm from "./WeightForm";
+import AlertsPanel from "./AlertsPanel";
+import NurseListTable from "./NurseListTable";
+import ConfirmLogoutModal from "./ConfirmLogoutModal";
 
 const NAV_ITEMS = [
-  { id: "register", label: "Registrar embarazada", icon: "➕" },
+  { id: "register", label: "Registrar", icon: "➕" },
   { id: "list", label: "Lista de usuarios", icon: "📋" },
   { id: "bp", label: "Registrar presión arterial", icon: "🩺" },
+  { id: "weight", label: "Registrar peso", icon: "⚖️" },
+  { id: "alerts", label: "Alertas", icon: "🚨" },
 ];
 
-export default function NurseDashboard({ onLogout, showToast }) {
+export default function NurseDashboard({ nurse, onLogout, showToast }) {
   const [activeView, setActiveView] = useState("register");
   const [patients, setPatients] = useState([]);
   const [bpRecords, setBpRecords] = useState([]);
+  const [weightRecords, setWeightRecords] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [nurses, setNurses] = useState([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const loadPatients = async () => {
+  const withSessionGuard = (fn) => async (...args) => {
     try {
-      setPatients(await api.getPatients());
+      await fn(...args);
     } catch (err) {
-      showToast(err.message || "No se pudo cargar la lista", false);
+      if (err.status === 401) {
+        showToast("Tu sesión expiró. Iniciá sesión de nuevo.", false);
+        onLogout();
+        return;
+      }
+      throw err;
     }
   };
 
-  const loadBPRecords = async () => {
-    try {
-      setBpRecords(await api.getBPRecords());
-    } catch (err) {
-      showToast(err.message || "No se pudo cargar el historial", false);
-    }
-  };
+  const loadPatients = withSessionGuard(async () => {
+    setPatients(await api.getPatients());
+  });
+
+  const loadBPRecords = withSessionGuard(async () => {
+    setBpRecords(await api.getBPRecords());
+  });
+
+  const loadWeightRecords = withSessionGuard(async () => {
+    setWeightRecords(await api.getWeights());
+  });
+
+  const loadAlerts = withSessionGuard(async () => {
+    setAlerts(await api.getAlerts());
+  });
+
+  const loadNurses = withSessionGuard(async () => {
+    setNurses(await api.getNurses());
+  });
 
   useEffect(() => {
     loadPatients();
   }, []);
 
   useEffect(() => {
-    if (activeView === "list") loadPatients();
+    if (activeView === "list") {
+      loadPatients();
+      loadNurses();
+    }
     if (activeView === "bp") {
       loadPatients();
       loadBPRecords();
     }
+    if (activeView === "weight") {
+      loadPatients();
+      loadWeightRecords();
+    }
+    if (activeView === "alerts") loadAlerts();
   }, [activeView]);
 
   return (
@@ -50,6 +85,12 @@ export default function NurseDashboard({ onLogout, showToast }) {
           <span className="text-2xl">👩‍⚕️</span>
           <span className="font-bold text-purple-700">GESTAR+</span>
         </div>
+
+        {nurse && (
+          <div className="px-6 py-3 border-b border-gray-100 text-xs text-gray-500">
+            {nurse.nombre} {nurse.apellido}
+          </div>
+        )}
 
         <nav className="flex-1 px-3 py-4 space-y-1">
           {NAV_ITEMS.map((item) => (
@@ -68,7 +109,7 @@ export default function NurseDashboard({ onLogout, showToast }) {
 
         <div className="p-3 border-t border-gray-100">
           <button
-            onClick={onLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50"
           >
             🚪 Cerrar sesión
@@ -78,12 +119,18 @@ export default function NurseDashboard({ onLogout, showToast }) {
 
       <main className="flex-1 p-8 overflow-y-auto">
         {activeView === "register" && (
-          <RegisterPatientForm
+          <RegisterUserForm
             onPatientCreated={(p) => setPatients((prev) => [...prev, p])}
+            onNurseCreated={(n) => setNurses((prev) => [...prev, n])}
             showToast={showToast}
           />
         )}
-        {activeView === "list" && <PatientListTable patients={patients} />}
+        {activeView === "list" && (
+          <div className="space-y-8">
+            <PatientListTable patients={patients} />
+            <NurseListTable nurses={nurses} />
+          </div>
+        )}
         {activeView === "bp" && (
           <BloodPressureForm
             patients={patients}
@@ -92,7 +139,29 @@ export default function NurseDashboard({ onLogout, showToast }) {
             showToast={showToast}
           />
         )}
+        {activeView === "weight" && (
+          <WeightForm
+            patients={patients}
+            weightRecords={weightRecords}
+            onRecordCreated={(r) => {
+              setWeightRecords((prev) => [r, ...prev]);
+              if (r.alerta) setAlerts((prev) => [r, ...prev]);
+            }}
+            showToast={showToast}
+          />
+        )}
+        {activeView === "alerts" && <AlertsPanel alerts={alerts} />}
       </main>
-    </div>
-  );
-}
+
+      <ConfirmLogoutModal
+        open={showLogoutConfirm}
+        onCancel={() => setShowLogoutConfirm(false)}
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          showToast("Sesión cerrada correctamente.");
+          onLogout();
+        }}
+      />
+     </div>
+   );
+ }

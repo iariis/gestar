@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { api } from "../api/client";
+import PasswordInput from "./PasswordInput";
 
-const emptyForm = { nombre: "", apellido: "", dni: "", email: "" };
+const emptyForm = { nombre: "", apellido: "", email: "", password: "" };
 
-export default function RegisterPatientForm({ onPatientCreated, showToast }) {
+export default function NurseRegisterForm({ onRegistered, onBack, onGoToLogin }) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -17,15 +18,13 @@ export default function RegisterPatientForm({ onPatientCreated, showToast }) {
     setErrors({});
     setSubmitting(true);
     try {
-      const patient = await api.createPatient(form);
-      onPatientCreated(patient);
-      setForm(emptyForm);
-      showToast("Usuario registrado correctamente");
+      const nurse = await api.registerNurse(form);
+      onRegistered(nurse);
     } catch (err) {
       if (err.data?.errors) {
         setErrors(err.data.errors);
       } else {
-        showToast(err.message || "No se pudo registrar", false);
+        setErrors({ _general: err.message || "No se pudo registrar" });
       }
     } finally {
       setSubmitting(false);
@@ -33,9 +32,12 @@ export default function RegisterPatientForm({ onPatientCreated, showToast }) {
   };
 
   return (
-    <div className="fade-in max-w-lg">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Registrar embarazada</h2>
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-purple-50 to-pink-50 px-4">
+      <div className="text-5xl mb-4">👩‍⚕️</div>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 w-full max-w-sm space-y-4"
+      >
         <Field label="Nombre" error={errors.nombre}>
           <input
             type="text"
@@ -54,15 +56,6 @@ export default function RegisterPatientForm({ onPatientCreated, showToast }) {
           />
         </Field>
 
-        <Field label="DNI" error={errors.dni}>
-          <input
-            type="text"
-            value={form.dni}
-            onChange={handleChange("dni")}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
-          />
-        </Field>
-
         <Field label="Email" error={errors.email}>
           <input
             type="email"
@@ -72,22 +65,34 @@ export default function RegisterPatientForm({ onPatientCreated, showToast }) {
           />
         </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">Estado</label>
-          <input
-            type="text"
-            value="Activo"
-            disabled
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-400"
-          />
-        </div>
+        <Field label="Contraseña" error={errors.password}>
+          <PasswordInput value={form.password} onChange={handleChange("password")} />
+        </Field>
+
+        {errors._general && <p className="text-red-500 text-xs">{errors._general}</p>}
 
         <button
           type="submit"
           disabled={submitting}
           className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition"
         >
-          {submitting ? "Registrando..." : "Registrar"}
+          {submitting ? "Registrando..." : "Registrarme"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onGoToLogin}
+          className="w-full text-purple-500 text-sm hover:text-purple-700"
+        >
+          ¿Ya tenés cuenta? Ingresá
+        </button>
+
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full text-gray-400 text-sm hover:text-gray-600"
+        >
+          ← Volver
         </button>
       </form>
     </div>
