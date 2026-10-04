@@ -22,11 +22,13 @@ patients = []
 bp_records = []
 symptom_records = []
 messages = []
+reminders = []
 
 next_patient_id = 1
 next_bp_id = 1
 next_symptom_id = 1
 next_message_id = 1
+next_reminder_id = 1
 
 
 SINTOMAS_VALIDOS = {
@@ -343,6 +345,86 @@ def reply_message(message_id):
 
     return jsonify(message), 200
 
+# -----------------------------------------------------------------------
+# Recordatorios de presión
+# -----------------------------------------------------------------------
+
+@app.route("/api/reminders/config", methods=["POST"])
+def configure_reminder():
+    global next_reminder_id
+
+    data = request.get_json(force=True, silent=True) or {}
+
+    patient_id = data.get("patient_id")
+    tipo = (data.get("tipo") or "").strip().lower()
+    horario = (data.get("horario") or "").strip()
+
+    if not patient_id:
+        return jsonify({"error": "Paciente requerido"}), 400
+
+    if tipo not in ("mañana", "noche"):
+        return jsonify({
+            "error": "El tipo debe ser 'mañana' o 'noche'"
+        }), 400
+
+    if not horario:
+        return jsonify({"error": "Horario requerido"}), 400
+
+    patient = next(
+        (p for p in patients if p["id"] == patient_id),
+        None
+    )
+
+    if patient is None:
+        return jsonify({"error": "Paciente no encontrado"}), 404
+
+    reminder = next(
+        (
+            r for r in reminders
+            if r["patient_id"] == patient_id
+            and r["tipo"] == tipo
+        ),
+        None
+    )
+
+    if reminder:
+        reminder["horario"] = horario
+        reminder["activo"] = True
+    else:
+        reminder = {
+            "id": next_reminder_id,
+            "patient_id": patient_id,
+            "tipo": tipo,
+            "horario": horario,
+            "activo": True,
+        }
+
+        reminders.append(reminder)
+        next_reminder_id += 1
+
+    return jsonify(reminder), 200
+
+
+@app.route("/api/reminders/<int:patient_id>", methods=["GET"])
+def get_reminders(patient_id):
+
+    patient = next(
+        (p for p in patients if p["id"] == patient_id),
+        None
+    )
+
+    if patient is None:
+        return jsonify({"error": "Paciente no encontrado"}), 404
+
+    patient_reminders = [
+        r for r in reminders
+        if r["patient_id"] == patient_id
+        and r["activo"] is True
+    ]
+
+    patient_reminders.sort(key=lambda r: r["horario"])
+
+    return jsonify(patient_reminders), 200
 
 # -----------------------------------------------------------------------
 # Health check

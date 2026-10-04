@@ -1,3 +1,4 @@
+
 // Cliente HTTP simple para hablar con el backend Flask.
 
 const BASE_URL =
@@ -67,4 +68,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ reply }),
     }),
+
+  // Recordatorios
+  configureReminder: (payload) =>
+    request("/reminders/config", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  getReminders: (patientId) =>
+    request(`/reminders/${patientId}`),
 };
