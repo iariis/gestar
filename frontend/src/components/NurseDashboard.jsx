@@ -10,18 +10,19 @@ import BloodPressureForm from "./BloodPressureForm";
 
 import MessagesPanel from "./MessagesPanel";
 
+import Agenda from "./Appointments";
+
 const NAV_ITEMS = [
   { id: "register", label: "Registrar embarazada", icon: "➕" },
   { id: "list", label: "Lista de usuarios", icon: "📋" },
   { id: "bp", label: "Registrar presión arterial", icon: "🩺" },
   { id: "messages", label: "Mensajes", icon: "💬" },
+  { id: "agenda", label: "Agenda", icon: "📅" },
 ];
 
 export default function NurseDashboard({ onLogout, showToast }) {
   const [activeView, setActiveView] = useState("register");
-
   const [patients, setPatients] = useState([]);
-
   const [bpRecords, setBpRecords] = useState([]);
 
   const loadPatients = async () => {
@@ -118,6 +119,8 @@ export default function NurseDashboard({ onLogout, showToast }) {
         {activeView === "messages" && (
           <MessagesPanel showToast={showToast} />
         )}
+
+        {activeView === "agenda" && <Agenda />}
       </main>
     </div>
   );
