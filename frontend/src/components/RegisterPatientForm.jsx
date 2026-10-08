@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { api } from "../api/client";
 
-const emptyForm = { nombre: "", apellido: "", dni: "", email: "" };
+const emptyForm = {
+  nombre: "",
+  apellido: "",
+  dni: "",
+  email: "",
+  fecha_parto: "",
+};
 
 export default function RegisterPatientForm({ onPatientCreated, showToast }) {
   const [form, setForm] = useState(emptyForm);
@@ -71,7 +77,14 @@ export default function RegisterPatientForm({ onPatientCreated, showToast }) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
           />
         </Field>
-
+        <Field label="Fecha de parto" error={errors.fecha_parto}>
+          <input
+              type="date"
+              value={form.fecha_parto}
+              onChange={handleChange("fecha_parto")}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            />
+          </Field>
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">Estado</label>
           <input

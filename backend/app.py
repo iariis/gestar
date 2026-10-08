@@ -68,8 +68,8 @@ def create_patient():
     nombre = (data.get("nombre") or "").strip()
     apellido = (data.get("apellido") or "").strip()
     dni = (data.get("dni") or "").strip()
-    email = (data.get("email") or "").strip()
-
+    email = (data.get("email") or "").strip()   
+    fecha_parto = (data.get("fecha_parto") or "").strip()
     errors = {}
 
     if not nombre:
@@ -97,6 +97,7 @@ def create_patient():
         "apellido": apellido,
         "dni": dni,
         "email": email,
+        "fecha_parto": fecha_parto,
         "estado": "Activo",
     }
 
